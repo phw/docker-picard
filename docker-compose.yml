@@ -1,0 +1,12 @@
+version: '2'
+
+services:
+  picard:
+    build: .
+    ports:
+      - "127.0.0.1:5800:5800"
+      - "127.0.0.1:5900:5900"
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - /home/phw/devel/musicbrainz/docker-picard/config:/config:rw
+      - /home/phw/Musik:/storage:rw

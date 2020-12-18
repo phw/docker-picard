@@ -3,7 +3,7 @@ FROM jlesage/baseimage-gui:ubuntu-18.04
 ENV URL_PICARD_REPO="https://github.com/metabrainz/picard.git" \
     URL_CHROMAPRINT_REPO="https://github.com/acoustid/chromaprint.git" \
     URL_GOOGLETEST_REPO="https://github.com/google/googletest.git"
-    
+
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 COPY rootfs/ /
@@ -85,7 +85,9 @@ RUN set -x && \
         ${KEPT_PACKAGES[@]} \
         ${TEMP_PACKAGES[@]} \
         && \
-    git config --global advice.detachedHead false && \
+    git config --global advice.detachedHead false
+
+RUN set -x && \
     # Clone googletest (required for build of Chromaprint)
     git clone "$URL_GOOGLETEST_REPO" /src/googletest && \
     pushd /src/googletest && \
@@ -108,26 +110,29 @@ RUN set -x && \
     make && \
     make check && \
     make install && \
-    echo "$BRANCH_CHROMAPRINT" >> /VERSIONS && \
-    popd && \
+    echo "$BRANCH_CHROMAPRINT" >> /VERSIONS
+
+COPY ./picard /src/picard
+
+RUN set -x && \
     # Clone Picard repo & checkout latest version
-    git clone "$URL_PICARD_REPO" /src/picard && \
+    # git clone "$URL_PICARD_REPO" /src/picard && \
     pushd /src/picard && \
-    BRANCH_PICARD=$(git tag --sort="-creatordate" | head -1) && \
-    git checkout "tags/${BRANCH_PICARD}" && \
+    # BRANCH_PICARD=$(git tag --sort="-creatordate" | head -1) && \
+    # git checkout "tags/${BRANCH_PICARD}" && \
     # Fix for: https://stackoverflow.com/questions/59768179/pip-raise-filenotfounderror-errno-2-no-such-file-or-directory-tmp-pip-inst?noredirect=1&lq=1
     sed -i 's/PyQt5>=5.7.1/PyQt5>=5.11/g' ./requirements.txt && \
     # Install Picard requirements
     pip3 install --no-cache-dir --upgrade pip && \
     pip3 install --no-cache-dir -r requirements.txt && \
-    pip3 install --no-cache-dir discid python-libdiscid && \
+    pip3 install --no-cache-dir discid && \
     locale-gen en_US.UTF-8 && \
     export LC_ALL=C.UTF-8 && \
     # Build & install Picard
     python3 setup.py build && \
     python3 setup.py build_ext -i && \
     python3 setup.py build_locales -i && \
-    python3 setup.py test && \
+    # python3 setup.py test && \
     python3 setup.py install && \
     mkdir -p /tmp/run/user/app && \
     chmod 0700 /tmp/run/user/app && \
